@@ -4,8 +4,15 @@ import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.Manifest
 import android.content.pm.PackageManager
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.Color
+import android.graphics.Paint
+import android.util.Log
+import androidx.activity.viewModels
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.Observer
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
@@ -15,16 +22,17 @@ import com.google.android.gms.maps.model.MarkerOptions
 import com.ba.mappy.databinding.ActivityMapsBinding
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
+import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.tasks.OnSuccessListener
+import com.google.gson.Gson
 
 class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
     private lateinit var mMap: GoogleMap
     private lateinit var binding: ActivityMapsBinding
     private lateinit var fusedLocationClient: FusedLocationProviderClient
-
+    private val stationViewModel: StationViewModel by viewModels()
     private val PERMISSION_REQUEST_CODE = 1
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -40,6 +48,18 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
     }
 
     private fun setupMap() {
+        val width = 45 // Genişlik
+        val height = 45 // Yükseklik
+        val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(bitmap)
+        val paint = Paint()
+        paint.color = Color.BLUE
+        paint.style = Paint.Style.FILL
+        val radius = Math.min(width, height) / 2.toFloat()
+        canvas.drawCircle(width / 2.toFloat(), height / 2.toFloat(), radius, paint)
+
+// Özel işaretçi ikonunu oluşturun
+        val markerIcon = BitmapDescriptorFactory.fromBitmap(bitmap)
         val mapFragment = supportFragmentManager
             .findFragmentById(R.id.map) as SupportMapFragment
         mapFragment.getMapAsync(this)
@@ -53,13 +73,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
                 Manifest.permission.ACCESS_COARSE_LOCATION
             ) != PackageManager.PERMISSION_GRANTED
         ) {
-            // TODO: Consider calling
-            //    ActivityCompat#requestPermissions
-            // here to request the missing permissions, and then overriding
-            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-            //                                          int[] grantResults)
-            // to handle the case where the user grants the permission. See the documentation
-            // for ActivityCompat#requestPermissions for more details.
             return
         }
         fusedLocationClient.lastLocation
@@ -72,9 +85,33 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
                     mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(userLatLng, 15f), 2000, null)
                     mMap.addMarker(MarkerOptions().position(userLatLng).title("My Location"))
-
                 }
             })
+
+        stationViewModel.stationsLiveData.observe(this, Observer { stations ->
+            val gson = Gson()
+            // Convert the list to a JSON string
+            val json = gson.toJsonTree(stations).asJsonArray
+            Log.e("BUSRA", json.toString())
+            if (json != null) {
+                Log.d("Get From API", stations.toString())
+                for (i in 0 until json.size()) {
+                    val jsonarrays = json[i].asJsonObject
+                    val centerCoordinates = jsonarrays["center_coordinates"].asString
+                    val (latitudeStr, longitudeStr) = centerCoordinates.toString().split(",")
+                    val latitude = latitudeStr.toDouble()
+                    val longitude = longitudeStr.toDouble()
+                    val location = LatLng(latitude, longitude)
+                    val name = jsonarrays.get("name")
+
+                    mMap.addMarker(MarkerOptions()
+                        .position(location).title(name.toString())
+                        .icon(markerIcon))
+                }
+            } else {
+                Log.e("BUSRA", "this is completely wrong")
+            }
+        })
     }
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {

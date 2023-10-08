@@ -13,7 +13,7 @@ android {
     defaultConfig {
         applicationId = "com.ba.mappy"
         minSdk = 24
-        targetSdk = 34
+        targetSdk = 33
         versionCode = 1
         versionName = "1.0"
 
@@ -53,6 +53,21 @@ dependencies {
     androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
 
     implementation ("com.google.android.gms:play-services-location:21.0.1")
+
+    //retrofit
+    implementation ("com.squareup.retrofit2:retrofit:2.9.0")
+    implementation ("com.squareup.retrofit2:converter-gson:2.9.0")
+    implementation ("com.squareup.okhttp3:logging-interceptor:4.9.1")
+    implementation ("com.squareup.okhttp3:okhttp:4.9.1")
+    implementation ("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.4")
+
+
+
+    //viewmodel
+    implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.6.2") // Kütüphane sürümünü güncelleyin
+    implementation("androidx.lifecycle:lifecycle-livedata-ktx:2.6.2")
+
+
 
 
     val nav_version = "2.7.4"
