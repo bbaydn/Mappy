@@ -1,4 +1,4 @@
-package com.ba.mappy
+package com.ba.mappy.viewmodel
 
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
